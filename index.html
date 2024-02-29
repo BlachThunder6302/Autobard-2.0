@@ -1,0 +1,211 @@
+<html>
+
+<head>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik+Marker+Hatch&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css?family=EB+Garamond" rel="stylesheet">
+  <style>
+    body {
+      color: #ffffff;
+      font-family: sans-serif;
+      margin: 0 auto;
+      max-width: 30em;
+      font-family: "Rubik Marker Hatch", system-ui;
+      font-weight: 100;
+      font-style: normal;
+    }
+
+    select,
+    button {
+      font-size: 100%;
+      max-width: 15em;
+    }
+
+    #title {
+      color: white;
+      font-size: 120%;
+      font-weight: bold;
+    }
+
+    #about>p {
+      margin: 0.5em 0;
+    }
+
+    .section {
+      border: 1px solid #ffffff;
+      margin: 0.5em 0;
+      padding: 0.5em;
+      border-radius: 0.5em;
+      color: #ffffff;
+      font-family: 'Courier New', Courier, monospace;
+      
+      background-color: rgb(0, 0, 0);
+      color: rgb(255, 255, 255);
+    }
+
+    #poem {
+      max-height: 14em;
+      overflow: scroll;
+    }
+
+    #main-title {
+      color: #ffffff;
+      text-align: center; /* Center align the title */
+      font-size: 4em; /* Adjust the font size as needed */
+    }
+    html{
+      background-image: url('back2.avif');
+      background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: cover;
+    }
+
+    #typediv {
+      position: fixed;
+      left: 10px; /* Left aligned */
+      top: 50%; /* Vertically centered */
+      transform: translateY(-50%); /* Adjust vertically */
+      width: 26%;
+      
+    }
+    
+    #typeimg {
+      position: fixed;
+      top: 50%; /* Vertically centered */
+      left: 0; /* Left aligned */
+      transform: translateY(-50%); /* Adjust vertically */
+      height: auto; /* Maintain aspect ratio */
+      width: 100%;
+    }
+
+    #type2 {
+      position: fixed;
+      right: 10px; /* Left aligned */
+      top: 50%; /* Vertically centered */
+      transform: translateY(-50%); /* Adjust vertically */
+      width: 28%;
+      
+    }
+    
+    #type2img {
+      position: fixed;
+      top: 50%; /* Vertically centered */
+      left: 0; /* Left aligned */
+      transform: translateY(-50%); /* Adjust vertically */
+      height: auto; /* Maintain aspect ratio */
+      width: 100%;
+      border-radius: 100%;
+    }
+    
+    
+  </style>
+</head>
+
+<body >
+  <p id="main-title">AutoBard</p>
+  
+  <p>
+    Neural poetry given a <b>style</b> and <b>subject</b>.
+  </p>
+
+  <select id="poems"></select> <button onclick="randomSelect(selectPoems); update();">random</button>
+  <div id="poem" class="section">Loading...</div>
+
+  <select id="seeds"></select> <button onclick="randomSelect(selectSeeds); update();">random</button> <button
+    onclick="regenerate()">regenerate</button>
+  <p id="generated" class="section">Loading...</p>
+
+  <p style="display: none;">
+    <a href="https://github.com/openai/gpt-2">GPT-2</a> with <a href="https://www.poetryfoundation.org/">top-40
+      poets</a>, and a few <a href="#" onclick="document.querySelector('#thanks').style.display = 'block'">donated
+      favorites</a>
+  </p>
+  <div id="typediv">
+    <img src="ww1.png" alt="" id="typeimg">
+  </div>
+  <div id="type2">
+    <img id="type2img" src="type.jpg" alt="Image">
+  </div>
+
+
+
+  <script>
+    let index = 0;
+
+    let selectPoems = document.querySelector('#poems');
+    let selectSeeds = document.querySelector('#seeds');
+    let poemElt = document.querySelector("#poem");
+    let generatedElt = document.querySelector("#generated");
+
+    function convertNewlines(text) {
+      return text.split('\n').join('<br/>').split('<|endoftext|>')[0];
+    }
+
+    function update() {
+      let key = selectPoems.value;
+      let poem = poems[key];
+      // console.log(poem.url);
+      poemElt.innerHTML = poem.poem.join('<br/>');
+
+      let seed = selectSeeds.value;
+      generatedElt.innerHTML = convertNewlines(generated[seed][key][index]) + '...';
+    }
+
+    function randomSelect(elt) {
+      let n = elt.options.length;
+      let i = Math.floor(Math.random() * n);
+      elt.value = elt.options[i].value;
+      regenerate();
+    }
+
+    function regenerate() {
+      index = (index + 1) % 10;
+      update();
+    }
+
+    Promise.all([
+      fetch('poems.json').then(e => e.json()),
+      fetch('generated.json').then(e => e.json())
+    ])
+      .then(files => {
+        poems = files[0];
+        generated = files[1];
+
+        let sortable = [];
+        for (key in poems) {
+          let poem = poems[key];
+          sortable.push([
+            poem['author'] + ' > ' + poem['title'],
+            key
+          ])
+        }
+        sortable.sort(function (a, b) {
+          return a[0].toLowerCase().localeCompare(b[0].toLowerCase());
+        });
+        sortable.forEach(item => {
+          let opt = document.createElement("option");
+          opt.text = item[0];
+          opt.value = item[1];
+          selectPoems.add(opt);
+        })
+
+        for (key in generated) {
+          let opt = document.createElement("option");
+          opt.text = key;
+          opt.value = key;
+          selectSeeds.add(opt);
+        }
+
+        randomSelect(selectPoems);
+        randomSelect(selectSeeds);
+
+        selectSeeds.onchange = update;
+        selectPoems.onchange = update;
+        update();
+      })
+  </script>
+</body>
+
+</html>
